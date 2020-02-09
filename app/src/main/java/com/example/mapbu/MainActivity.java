@@ -25,8 +25,11 @@ import android.view.KeyEvent;
 import com.example.mapbu.R;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -40,6 +43,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
@@ -54,7 +58,12 @@ public class MainActivity extends AppCompatActivity
     GoogleApiClient mGoogleApiClient;
     Location mLastLocation;
     Marker mCurrLocationMarker;
-    private LatLng JOHNSON_CITY = new LatLng(42.104311, -75.931283);
+
+    private FusedLocationProviderClient mFusedLocationClient;
+    private LocationRequest locationRequest;
+    private LocationCallback locationCallback;
+
+    private LatLng JOHNSON_CITY = new LatLng(42.104145,-75.955169);
     private ArrayList<LatLng> Stop_LatLng = new ArrayList<LatLng>();
     private ArrayList<String> Stop_Strings = new ArrayList<String>();
     private ArrayList<Marker> Stop_Markers = new ArrayList<>();
@@ -64,10 +73,20 @@ public class MainActivity extends AppCompatActivity
     double smallLong;
     double largeLong;
     boolean dontRepeatToastsForLocationServices = false;
+    ArrayList<String> troubledExes = new ArrayList<>();
+    ArrayList<String> troubledWhys = new ArrayList<>();
+
+    boolean mLocationUpdates=false;
+    boolean isGPS = false;
+    String stop;
 
     //Maybe use maps later on if I have time
+//////////
+    private LocationRequest mLocationRequest2;
 
-
+    private long UPDATE_INTERVAL = 10 * 1000;  /* 10 secs */
+    private long FASTEST_INTERVAL = 2000; /* 2 sec */
+    ////////
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,13 +94,31 @@ public class MainActivity extends AppCompatActivity
 
         getSupportActionBar().setTitle("Map Location Activity");
 
-        boolean DCLOut = getIntent().getBooleanExtra("DCLOut",false);
+        boolean DCLOut = getIntent().getBooleanExtra("DCLOut",true);
         smallLat=getIntent().getDoubleExtra("smallLat",0); //These extras are from the map activities
         smallLong=getIntent().getDoubleExtra("smallLong",0);
         largeLat=getIntent().getDoubleExtra("largeLat",0);
         largeLong=getIntent().getDoubleExtra("largeLong",0);
+        stop = getIntent().getStringExtra("stop");
+
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFrag.getMapAsync(this);
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);////////////////
+
+        locationRequest = LocationRequest.create();/////
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);///////////////
+        locationRequest.setInterval(1000); // 1 seconds ////////////
+        locationRequest.setFastestInterval(1000); //1 seconds ///////////
+
+        new GpsUtils(this).turnGPSOn(new GpsUtils.onGpsListener() { /////////////
+            @Override //////////
+            public void gpsStatus(boolean isGPSEnable) { //////////////
+                // turn on GPS/////////////////
+                isGPS = isGPSEnable;/////////////
+            }/////////////
+        });////////////
+
+
         if(DCLOut){
             Stop_LatLng.add(new LatLng(42.090876, -75.973489));
             Stop_Strings.add("Physical Facilities");
@@ -105,6 +142,9 @@ public class MainActivity extends AppCompatActivity
             Stop_LatLng.add(new LatLng(42.092519, -75.935848));
             Stop_Strings.add("Riverside and Beethoven");
 
+            Stop_LatLng.add(new LatLng(42.095251,-75.934635));
+            Stop_Strings.add("Leroy and Beethoven");
+
             Stop_LatLng.add(new LatLng(42.095434, -75.930941)); //THIS ONE is going to be unique...
             Stop_Strings.add("Leroy and Laurel"); //Start of LEROY
 
@@ -113,6 +153,9 @@ public class MainActivity extends AppCompatActivity
 
             Stop_LatLng.add(new LatLng(42.095431, -75.922624));
             Stop_Strings.add("Leroy and Murray"); //end of LEROY
+
+            Stop_LatLng.add(new LatLng(42.094917,-75.918896));
+            Stop_Strings.add("Leroy and Front");
 
             Stop_LatLng.add(new LatLng(42.092757, -75.920399)); //Is this really where that is? Check SPOT later if time
             Stop_Strings.add("Riverside and Front"); //tricky one
@@ -178,6 +221,21 @@ public class MainActivity extends AppCompatActivity
 
             Stop_LatLng.add(new LatLng(42.087327, -75.967487));
             Stop_Strings.add("Union");
+
+            troubledExes.add("Floral and St. Charles"); //These are almost horizontal journeys which fuck up the algo
+            troubledExes.add("Floral and Harrison");
+            troubledExes.add("Floral and Roberts");
+            troubledExes.add("Floral and Willow");
+            troubledExes.add("Floral and Burbank");
+            troubledExes.add("Floral and Cleveland");
+            troubledExes.add("Hawley");
+            troubledExes.add("Leroy and Laurel");
+            troubledExes.add("Leroy and Chestnut");
+            troubledExes.add("Main and Murray");
+            troubledExes.add("Leroy and Beethoven");
+            troubledWhys.add("Riverside and Beethoven");
+            troubledWhys.add("UDC");
+
         }
         else{
             Stop_LatLng.add(new LatLng(42.090876, -75.973489));
@@ -252,6 +310,9 @@ public class MainActivity extends AppCompatActivity
             Stop_LatLng.add(new LatLng(42.092519, -75.935848));
             Stop_Strings.add("Riverside and Beethoven");
 
+            Stop_LatLng.add(new LatLng(42.095251,-75.934635));
+            Stop_Strings.add("Leroy and Beethoven");
+
             Stop_LatLng.add(new LatLng(42.095434, -75.930941)); //THIS ONE is going to be unique...
             Stop_Strings.add("Leroy and Laurel"); //Start of LEROY
 
@@ -260,6 +321,9 @@ public class MainActivity extends AppCompatActivity
 
             Stop_LatLng.add(new LatLng(42.095431, -75.922624));
             Stop_Strings.add("Leroy and Murray"); //end of LEROY
+
+            Stop_LatLng.add(new LatLng(42.094917,-75.918896));
+            Stop_Strings.add("Leroy and Front");
 
             Stop_LatLng.add(new LatLng(42.092757, -75.920399)); //Is this really where that is? Check SPOT later if time
             Stop_Strings.add("Riverside and Front"); //tricky one
@@ -296,9 +360,61 @@ public class MainActivity extends AppCompatActivity
 
             Stop_LatLng.add(new LatLng(42.087327, -75.967487));
             Stop_Strings.add("Union");
+
+            troubledExes.add("Floral and St. Charles"); //These are almost horizontal journeys which fuck up the algo
+            troubledExes.add("Floral and Harrison");
+            troubledExes.add("Floral and Roberts");
+            troubledExes.add("Floral and Willow");
+            troubledExes.add("Floral and Burbank");
+            troubledExes.add("Floral and Cook");
+            troubledExes.add("Main and Front");
+            troubledExes.add("Leroy and Laurel");
+            troubledExes.add("Leroy and Chestnut");
+            troubledExes.add("Main and Murray");
+            troubledExes.add("Leroy and Front");
+            troubledWhys.add("Leroy and Beethoven");
+            troubledWhys.add("Hawley");
         }
+        locationCallback = new LocationCallback() { /////////////////////////////////
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (locationResult == null) {
+                    return;
+                }
+                for (Location location : locationResult.getLocations()) {
+                    if (location != null) {
+                        onLocationChanged(location);
+                        /*wayLatitude = location.getLatitude();
+                        wayLongitude = location.getLongitude();
+                        if (!isContinue) {
+                            txtLocation.setText(String.format(Locale.US, "%s - %s", wayLatitude, wayLongitude));
+                        } else {
+                            stringBuilder.append(wayLatitude);
+                            stringBuilder.append("-");
+                            stringBuilder.append(wayLongitude);
+                            stringBuilder.append("\n\n");
+                            txtContinueLocation.setText(stringBuilder.toString());
+                            // if(stringBuilder.length()>40){
+                            //    mFusedLocationClient.removeLocationUpdates(locationCallback);
+                            // }
+                        }
+                        if (!isContinue && mFusedLocationClient != null) {
+                            mFusedLocationClient.removeLocationUpdates(locationCallback);
+                        }*/
+                    }
+                }
+            }
+        };////////////////////
 
 
+    }
+    private void getLocation() {
+                mFusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null);///////////
+        }
+    private void stoploc(){//////////////
+        if(mFusedLocationClient != null){
+            mFusedLocationClient.removeLocationUpdates(locationCallback);
+        }
     }
 
 
@@ -324,19 +440,27 @@ public class MainActivity extends AppCompatActivity
                     == PackageManager.PERMISSION_GRANTED) {
                 //Location Permission already granted
                 buildGoogleApiClient();
-                mGoogleMap.setMyLocationEnabled(true);
+                mGoogleMap.setMyLocationEnabled(false);
             } else {
                 //Request Location Permission
                 checkLocationPermission();
             }
         } else {
             buildGoogleApiClient();
-            mGoogleMap.setMyLocationEnabled(true);
+            //mGoogleMap.setMyLocationEnabled(true);
         }
         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(JOHNSON_CITY, 13));
         for (int i = 0; i < Stop_Strings.size(); i++) {
             Stop_Markers.add(mGoogleMap.addMarker(new MarkerOptions().position(Stop_LatLng.get(i)).title(Stop_Strings.get(i))));
             Stop_Markers.get(i).setTag(0);
+        }
+        if(stop!=null&&stop!=""){
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED&&!mLocationUpdates) {
+                getLocation();
+                mGoogleMap.setMyLocationEnabled(true);
+            }
         }
         mGoogleMap.setOnMarkerClickListener(this);
 
@@ -403,19 +527,27 @@ public class MainActivity extends AppCompatActivity
                     mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
                     if (ContextCompat.checkSelfPermission(this,
                             Manifest.permission.ACCESS_FINE_LOCATION)
-                            == PackageManager.PERMISSION_GRANTED) {
-                        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+                            == PackageManager.PERMISSION_GRANTED&&!mLocationUpdates) {
+                        //LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+                        getLocation();///
+                        mLocationUpdates=true;
+                        mGoogleMap.setMyLocationEnabled(true);
                         if(!dontRepeatToastsForLocationServices){
                             dontRepeatToastsForLocationServices=true;
                             Toast.makeText(this, "Using location services because you selected a stop.", Toast.LENGTH_SHORT).show();
+                            mGoogleMap.setMyLocationEnabled(true);
                         }
                     }
                 } else {
                     if (mGoogleApiClient != null) {
-                        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+                        //LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+                        stoploc();
+                        mLocationUpdates=false;
+                        mGoogleMap.setMyLocationEnabled(false);
                         if(dontRepeatToastsForLocationServices){
                             Toast.makeText(this, "No longer using location services.", Toast.LENGTH_SHORT).show();
                             dontRepeatToastsForLocationServices=false;
+                            mGoogleMap.setMyLocationEnabled(false);
                         }
                     }
                 }
@@ -452,8 +584,11 @@ public class MainActivity extends AppCompatActivity
              mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
              if (ContextCompat.checkSelfPermission(this,
                      Manifest.permission.ACCESS_FINE_LOCATION)
-                     == PackageManager.PERMISSION_GRANTED) {
-                 LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+                     == PackageManager.PERMISSION_GRANTED&&!mLocationUpdates) {
+                 //LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+                 getLocation();
+                 mGoogleMap.setMyLocationEnabled(true);
+                 mLocationUpdates=true;
              }
          }
         }
@@ -479,6 +614,14 @@ public class MainActivity extends AppCompatActivity
             //Only code SOME exceptions...
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
             if(selectedMarker!=null){ //selected stop
+                if(troubledExes.contains(selectedMarker.getTitle())){
+                    largeLat+=.0008;
+                    smallLat-=.0008;
+                }
+                if(troubledWhys.contains(selectedMarker.getTitle())){
+                    smallLong-=.0008;
+                    largeLong+=.0008;
+                }
                 if(latLng.longitude>=smallLong && latLng.longitude<=largeLong &&latLng.latitude>=smallLat && latLng.latitude<=largeLat){
                     Toast.makeText(this,"BITCHES WE ARE STOPPING",Toast.LENGTH_SHORT).show();
                     createNotification("PULL THE LEVER, KRONK", this, "Your stop, "+selectedMarker.getTitle()+", is up next!");
@@ -489,9 +632,40 @@ public class MainActivity extends AppCompatActivity
                     largeLat=0;
                     largeLong=0;
                     if (mGoogleApiClient != null) {
-                        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+                        //LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+                        stoploc();
+                        mLocationUpdates=false;
+                        mGoogleMap.setMyLocationEnabled(false);
                         Toast.makeText(this, "No longer using location services.", Toast.LENGTH_SHORT).show();
                         }
+
+                }
+            }
+            else if(stop!=null&&stop!=""){
+                if(troubledExes.contains(stop)){
+                    largeLat+=.0008;
+                    smallLat-=.0008;
+                }
+                if(troubledWhys.contains(stop)){
+                    smallLong-=.0008;
+                    largeLong+=.0008;
+                }
+                if(latLng.longitude>=smallLong && latLng.longitude<=largeLong &&latLng.latitude>=smallLat && latLng.latitude<=largeLat){
+                    Toast.makeText(this,"BITCHES WE ARE STOPPING",Toast.LENGTH_SHORT).show();
+                    createNotification("PULL THE LEVER, KRONK", this, "Your stop, "+stop+", is up next!");
+
+// notificationId is a unique int for each notification that you must define
+                    smallLat=0;
+                    smallLong=0;
+                    largeLat=0;
+                    largeLong=0;
+                    if (mGoogleApiClient != null) {
+                        //LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+                        stoploc();
+                        mLocationUpdates=false;
+                        mGoogleMap.setMyLocationEnabled(false);
+                        Toast.makeText(this, "No longer using location services.", Toast.LENGTH_SHORT).show();
+                    }
 
                 }
             }
@@ -591,10 +765,33 @@ public class MainActivity extends AppCompatActivity
             //this.startActivity(new Intent(YourActivity.this,NewActivity.class));
             Intent i = new Intent(MainActivity.this, ListActivity.class);
             if(smallLat!=0) { //checking one instead of all. Bad practice?
+                if(selectedMarker!=null){
+                    i.putExtra("stop",selectedMarker.getTitle());
+                    if(troubledExes.contains(selectedMarker.getTitle())){
+                        largeLat+=.0008;
+                        smallLat-=.0008;
+                    }
+                    if(troubledWhys.contains(selectedMarker.getTitle())){
+                        smallLong-=.0008;
+                        largeLong+=.0008;
+                    }
+                }
+                else{
+                    i.putExtra("stop",stop);
+                    if(troubledExes.contains(stop)){
+                        largeLat+=.0008;
+                        smallLat-=.0008;
+                    }
+                    if(troubledWhys.contains(stop)){
+                        smallLong-=.0008;
+                        largeLong+=.0008;
+                    }
+                }
                 i.putExtra("smallLat", smallLat);
                 i.putExtra("largeLat", largeLat);
                 i.putExtra("smallLong",smallLong);
                 i.putExtra("largeLong",largeLong);
+
             }
             startActivity(i);
         }
