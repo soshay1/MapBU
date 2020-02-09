@@ -1,6 +1,11 @@
 package com.example.mapbu;
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -12,6 +17,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import android.view.KeyEvent;
 
@@ -52,10 +59,10 @@ public class MainActivity extends AppCompatActivity
     private ArrayList<String> Stop_Strings = new ArrayList<String>();
     private ArrayList<Marker> Stop_Markers = new ArrayList<>();
     private Marker selectedMarker = null;
-    double smallLat=0;
-    double largeLat=0;
-    double smallLong=0;
-    double largeLong=0;
+    double smallLat;
+    double largeLat;
+    double smallLong;
+    double largeLong;
     boolean dontRepeatToastsForLocationServices = false;
 
     //Maybe use maps later on if I have time
@@ -68,103 +75,229 @@ public class MainActivity extends AppCompatActivity
 
         getSupportActionBar().setTitle("Map Location Activity");
 
+        boolean DCLOut = getIntent().getBooleanExtra("DCLOut",false);
+        smallLat=getIntent().getDoubleExtra("smallLat",0); //These extras are from the map activities
+        smallLong=getIntent().getDoubleExtra("smallLong",0);
+        largeLat=getIntent().getDoubleExtra("largeLat",0);
+        largeLong=getIntent().getDoubleExtra("largeLong",0);
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFrag.getMapAsync(this);
-        Stop_LatLng.add(new LatLng(42.090876, -75.973489));
-        Stop_Strings.add("Physical Facilities");
+        if(DCLOut){
+            Stop_LatLng.add(new LatLng(42.090876, -75.973489));
+            Stop_Strings.add("Physical Facilities");
 
-        Stop_LatLng.add(new LatLng(42.095075, -75.975238));
-        Stop_Strings.add("Denny's"); //GO TO DENNYSSSSSSSSSSSSSSSS
+            Stop_LatLng.add(new LatLng(42.095075, -75.975238));
+            Stop_Strings.add("Denny's"); //GO TO DENNYSSSSSSSSSSSSSSSS
 
-        //Start of DCL out
-        Stop_LatLng.add(new LatLng(42.102223, -75.961692));
-        Stop_Strings.add("Riverside and Ethel");
+            //Start of DCL out
+            Stop_LatLng.add(new LatLng(42.102223, -75.961692));
+            Stop_Strings.add("Riverside and Ethel");
 
-        Stop_LatLng.add(new LatLng(42.100528, -75.959290));
-        Stop_Strings.add("Riverside and Elfred");
+            Stop_LatLng.add(new LatLng(42.100528, -75.959290));
+            Stop_Strings.add("Riverside and Elfred");
 
-        Stop_LatLng.add(new LatLng(42.099310, -75.955227));
-        Stop_Strings.add("Riverside and Columbus");
+            Stop_LatLng.add(new LatLng(42.099310, -75.955227));
+            Stop_Strings.add("Riverside and Columbus");
 
-        Stop_LatLng.add(new LatLng(42.098050, -75.949329));
-        Stop_Strings.add("Riverside and Margaret");
+            Stop_LatLng.add(new LatLng(42.098050, -75.949329));
+            Stop_Strings.add("Riverside and Margaret");
 
-        Stop_LatLng.add(new LatLng(42.092519, -75.935848));
-        Stop_Strings.add("Riverside and Beethoven");
+            Stop_LatLng.add(new LatLng(42.092519, -75.935848));
+            Stop_Strings.add("Riverside and Beethoven");
 
-        Stop_LatLng.add(new LatLng(42.095434, -75.930941)); //THIS ONE is going to be unique...
-        Stop_Strings.add("Leroy and Laurel"); //Start of LEROY
+            Stop_LatLng.add(new LatLng(42.095434, -75.930941)); //THIS ONE is going to be unique...
+            Stop_Strings.add("Leroy and Laurel"); //Start of LEROY
 
-        Stop_LatLng.add(new LatLng(42.095649, -75.926834));
-        Stop_Strings.add("Leroy and Chestnut");
+            Stop_LatLng.add(new LatLng(42.095649, -75.926834));
+            Stop_Strings.add("Leroy and Chestnut");
 
-        Stop_LatLng.add(new LatLng(42.095431, -75.922624));
-        Stop_Strings.add("Leroy and Murray"); //end of LEROY
+            Stop_LatLng.add(new LatLng(42.095431, -75.922624));
+            Stop_Strings.add("Leroy and Murray"); //end of LEROY
 
-        Stop_LatLng.add(new LatLng(42.092757, -75.920399)); //Is this really where that is? Check SPOT later if time
-        Stop_Strings.add("Riverside and Front"); //tricky one
+            Stop_LatLng.add(new LatLng(42.092757, -75.920399)); //Is this really where that is? Check SPOT later if time
+            Stop_Strings.add("Riverside and Front"); //tricky one
 
-        Stop_LatLng.add(new LatLng(42.095062, -75.914237));
-        Stop_Strings.add("UDC");
+            Stop_LatLng.add(new LatLng(42.095062, -75.914237));
+            Stop_Strings.add("UDC");
 
-        //End of DCL out
-        //Start of WS IN
-        Stop_LatLng.add(new LatLng(42.098812, -75.915057));
-        Stop_Strings.add("Hawley");
+            //End of DCL out
+            //Start of WS IN
+            Stop_LatLng.add(new LatLng(42.098812, -75.915057));
+            Stop_Strings.add("Hawley");
 
-        Stop_LatLng.add(new LatLng(42.098871, -75.917603));
-        Stop_Strings.add("Main and Front");
+            Stop_LatLng.add(new LatLng(42.098871, -75.917603));
+            Stop_Strings.add("Main and Front");
 
-        Stop_LatLng.add(new LatLng(42.099671, -75.921747));
-        Stop_Strings.add("Main and Murray");
+            Stop_LatLng.add(new LatLng(42.099671, -75.921747));
+            Stop_Strings.add("Main and Murray");
 
-        Stop_LatLng.add(new LatLng(42.100543, -75.924863));
-        Stop_Strings.add("Main and Mather");
+            Stop_LatLng.add(new LatLng(42.100543, -75.924863));
+            Stop_Strings.add("Main and Mather");
 
-        Stop_LatLng.add(new LatLng(42.102270, -75.928407));
-        Stop_Strings.add("Main and Cedar");
+            Stop_LatLng.add(new LatLng(42.102270, -75.928407));
+            Stop_Strings.add("Main and Cedar");
 
-        Stop_LatLng.add(new LatLng(42.103245, -75.930116));
-        Stop_Strings.add("Main and Clarke");
+            Stop_LatLng.add(new LatLng(42.103245, -75.930116));
+            Stop_Strings.add("Main and Clarke");
 
-        Stop_LatLng.add(new LatLng(42.105442, -75.933987));
-        Stop_Strings.add("Main and Schiller");
+            Stop_LatLng.add(new LatLng(42.105442, -75.933987));
+            Stop_Strings.add("Main and Schiller");
 
-        Stop_LatLng.add(new LatLng(42.107241, -75.937321));
-        Stop_Strings.add("Main and Helen");
+            Stop_LatLng.add(new LatLng(42.107241, -75.937321));
+            Stop_Strings.add("Main and Helen");
 
-        Stop_LatLng.add(new LatLng(42.109944, -75.942414));
-        Stop_Strings.add("Main and Crary");
+            Stop_LatLng.add(new LatLng(42.109944, -75.942414));
+            Stop_Strings.add("Main and Crary");
 
-        Stop_LatLng.add(new LatLng(42.110851, -75.945491));
-        Stop_Strings.add("Floral and Main"); //tricky
+            Stop_LatLng.add(new LatLng(42.110851, -75.945491));
+            Stop_Strings.add("Floral and Main"); //tricky
 
-        Stop_LatLng.add(new LatLng(42.109116, -75.948739));
-        Stop_Strings.add("Floral and Cleveland");
+            Stop_LatLng.add(new LatLng(42.109116, -75.948739));
+            Stop_Strings.add("Floral and Cleveland");
 
-        Stop_LatLng.add(new LatLng(42.108598, -75.952368));
-        Stop_Strings.add("Floral and Burbank");
+            Stop_LatLng.add(new LatLng(42.108598, -75.952368));
+            Stop_Strings.add("Floral and Burbank");
 
-        Stop_LatLng.add(new LatLng(42.108312, -75.954180));
-        Stop_Strings.add("Floral and Willow");
+            Stop_LatLng.add(new LatLng(42.108312, -75.954180));
+            Stop_Strings.add("Floral and Willow");
 
-        Stop_LatLng.add(new LatLng(42.108045, -75.956040));
-        Stop_Strings.add("Floral and Roberts");
+            Stop_LatLng.add(new LatLng(42.108045, -75.956040));
+            Stop_Strings.add("Floral and Roberts");
 
-        Stop_LatLng.add(new LatLng(42.107795, -75.958276));
-        Stop_Strings.add("Floral and Harrison");
+            Stop_LatLng.add(new LatLng(42.107795, -75.958276));
+            Stop_Strings.add("Floral and Harrison");
 
-        Stop_LatLng.add(new LatLng(42.107468, -75.960404));
-        Stop_Strings.add("Floral and St. Charles");
+            Stop_LatLng.add(new LatLng(42.107468, -75.960404));
+            Stop_Strings.add("Floral and St. Charles");
 
-        Stop_LatLng.add(new LatLng(42.107166, -75.963433));
-        Stop_Strings.add("Floral and Cook");
+            Stop_LatLng.add(new LatLng(42.107166, -75.963433));
+            Stop_Strings.add("Floral and Cook");
 
-        Stop_LatLng.add(new LatLng(42.088689, -75.973155));
-        Stop_Strings.add("Academic A");
+            Stop_LatLng.add(new LatLng(42.088689, -75.973155));
+            Stop_Strings.add("Academic A");
 
-        Stop_LatLng.add(new LatLng(42.087327, -75.967487));
-        Stop_Strings.add("Union");
+            Stop_LatLng.add(new LatLng(42.087327, -75.967487));
+            Stop_Strings.add("Union");
+        }
+        else{
+            Stop_LatLng.add(new LatLng(42.090876, -75.973489));
+            Stop_Strings.add("Physical Facilities");
+
+            Stop_LatLng.add(new LatLng(42.095075, -75.975238));
+            Stop_Strings.add("Denny's"); //GO TO DENNYSSSSSSSSSSSSSSSS
+
+            Stop_LatLng.add(new LatLng(42.107166, -75.963433));
+            Stop_Strings.add("Floral and Cook");
+
+            Stop_LatLng.add(new LatLng(42.107468, -75.960404));
+            Stop_Strings.add("Floral and St. Charles");
+
+            Stop_LatLng.add(new LatLng(42.107795, -75.958276));
+            Stop_Strings.add("Floral and Harrison");
+
+            Stop_LatLng.add(new LatLng(42.108045, -75.956040));
+            Stop_Strings.add("Floral and Roberts");
+
+            Stop_LatLng.add(new LatLng(42.108312, -75.954180));
+            Stop_Strings.add("Floral and Willow");
+
+            Stop_LatLng.add(new LatLng(42.108598, -75.952368));
+            Stop_Strings.add("Floral and Burbank");
+
+            Stop_LatLng.add(new LatLng(42.109116, -75.948739));
+            Stop_Strings.add("Floral and Cleveland");
+
+            Stop_LatLng.add(new LatLng(42.110851, -75.945491));
+            Stop_Strings.add("Floral and Main"); //tricky
+
+            Stop_LatLng.add(new LatLng(42.109944, -75.942414));
+            Stop_Strings.add("Main and Crary");
+
+            Stop_LatLng.add(new LatLng(42.107241, -75.937321));
+            Stop_Strings.add("Main and Helen");
+
+            Stop_LatLng.add(new LatLng(42.105442, -75.933987));
+            Stop_Strings.add("Main and Schiller");
+
+            Stop_LatLng.add(new LatLng(42.103245, -75.930116));
+            Stop_Strings.add("Main and Clarke");
+
+            Stop_LatLng.add(new LatLng(42.102270, -75.928407));
+            Stop_Strings.add("Main and Cedar");
+
+            Stop_LatLng.add(new LatLng(42.100543, -75.924863));
+            Stop_Strings.add("Main and Mather");
+
+            Stop_LatLng.add(new LatLng(42.099671, -75.921747));
+            Stop_Strings.add("Main and Murray");
+
+            Stop_LatLng.add(new LatLng(42.098871, -75.917603));
+            Stop_Strings.add("Main and Front");
+
+            Stop_LatLng.add(new LatLng(42.098812, -75.915057));
+            Stop_Strings.add("Hawley");
+
+            Stop_LatLng.add(new LatLng(42.095062, -75.914237));
+            Stop_Strings.add("UDC");
+
+            Stop_LatLng.add(new LatLng(42.100528, -75.959290));
+            Stop_Strings.add("Riverside and Elfred");
+
+            Stop_LatLng.add(new LatLng(42.099310, -75.955227));
+            Stop_Strings.add("Riverside and Columbus");
+
+            Stop_LatLng.add(new LatLng(42.098050, -75.949329));
+            Stop_Strings.add("Riverside and Margaret");
+
+            Stop_LatLng.add(new LatLng(42.092519, -75.935848));
+            Stop_Strings.add("Riverside and Beethoven");
+
+            Stop_LatLng.add(new LatLng(42.095434, -75.930941)); //THIS ONE is going to be unique...
+            Stop_Strings.add("Leroy and Laurel"); //Start of LEROY
+
+            Stop_LatLng.add(new LatLng(42.095649, -75.926834));
+            Stop_Strings.add("Leroy and Chestnut");
+
+            Stop_LatLng.add(new LatLng(42.095431, -75.922624));
+            Stop_Strings.add("Leroy and Murray"); //end of LEROY
+
+            Stop_LatLng.add(new LatLng(42.092757, -75.920399)); //Is this really where that is? Check SPOT later if time
+            Stop_Strings.add("Riverside and Front"); //tricky one
+
+            Stop_LatLng.add(new LatLng(42.092757, -75.920399)); //Is this really where that is? Check SPOT later if time
+            Stop_Strings.add("Riverside and Front"); //tricky one
+
+            Stop_LatLng.add(new LatLng(42.095431, -75.922624));
+            Stop_Strings.add("Leroy and Murray"); //end of LEROY
+
+            Stop_LatLng.add(new LatLng(42.095649, -75.926834));
+            Stop_Strings.add("Leroy and Chestnut");
+
+            Stop_LatLng.add(new LatLng(42.095434, -75.930941)); //THIS ONE is going to be unique...
+            Stop_Strings.add("Leroy and Laurel"); //Start of LEROY
+
+            Stop_LatLng.add(new LatLng(42.092519, -75.935848));
+            Stop_Strings.add("Riverside and Beethoven");
+
+            Stop_LatLng.add(new LatLng(42.098050, -75.949329));
+            Stop_Strings.add("Riverside and Margaret");
+
+            Stop_LatLng.add(new LatLng(42.099310, -75.955227));
+            Stop_Strings.add("Riverside and Columbus");
+
+            Stop_LatLng.add(new LatLng(42.100528, -75.959290));
+            Stop_Strings.add("Riverside and Elfred");
+
+            Stop_LatLng.add(new LatLng(42.102223, -75.961692));
+            Stop_Strings.add("Riverside and Ethel");
+
+            Stop_LatLng.add(new LatLng(42.088689, -75.973155));
+            Stop_Strings.add("Academic A");
+
+            Stop_LatLng.add(new LatLng(42.087327, -75.967487));
+            Stop_Strings.add("Union");
+        }
+
 
     }
 
@@ -200,7 +333,7 @@ public class MainActivity extends AppCompatActivity
             buildGoogleApiClient();
             mGoogleMap.setMyLocationEnabled(true);
         }
-        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(JOHNSON_CITY, 12));
+        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(JOHNSON_CITY, 13));
         for (int i = 0; i < Stop_Strings.size(); i++) {
             Stop_Markers.add(mGoogleMap.addMarker(new MarkerOptions().position(Stop_LatLng.get(i)).title(Stop_Strings.get(i))));
             Stop_Markers.get(i).setTag(0);
@@ -348,6 +481,17 @@ public class MainActivity extends AppCompatActivity
             if(selectedMarker!=null){ //selected stop
                 if(latLng.longitude>=smallLong && latLng.longitude<=largeLong &&latLng.latitude>=smallLat && latLng.latitude<=largeLat){
                     Toast.makeText(this,"BITCHES WE ARE STOPPING",Toast.LENGTH_SHORT).show();
+                    createNotification("PULL THE LEVER, KRONK", this, "Your stop, "+selectedMarker.getTitle()+", is up next!");
+
+// notificationId is a unique int for each notification that you must define
+                    smallLat=0;
+                    smallLong=0;
+                    largeLat=0;
+                    largeLong=0;
+                    if (mGoogleApiClient != null) {
+                        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+                        Toast.makeText(this, "No longer using location services.", Toast.LENGTH_SHORT).show();
+                        }
 
                 }
             }
@@ -445,7 +589,65 @@ public class MainActivity extends AppCompatActivity
             //do whatever you want the 'Back' button to do
             //as an example the 'Back' button is set to start a new Activity named 'NewActivity'
             //this.startActivity(new Intent(YourActivity.this,NewActivity.class));
+            Intent i = new Intent(MainActivity.this, ListActivity.class);
+            if(smallLat!=0) { //checking one instead of all. Bad practice?
+                i.putExtra("smallLat", smallLat);
+                i.putExtra("largeLat", largeLat);
+                i.putExtra("smallLong",smallLong);
+                i.putExtra("largeLong",largeLong);
+            }
+            startActivity(i);
         }
         return true;
+    }
+    private NotificationManager notifManager;
+    public void createNotification(String aMessage, Context context, String contentText) {
+        final int NOTIFY_ID = 0; // ID of notification
+        String id = "channel_id"; // default_channel_id
+        String title = "channel_title";// Default Channel
+        Intent intent;
+        PendingIntent pendingIntent;
+        NotificationCompat.Builder builder;
+        if (notifManager == null) {
+            notifManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel mChannel = notifManager.getNotificationChannel(id);
+            if (mChannel == null) {
+                mChannel = new NotificationChannel(id, title, importance);
+                mChannel.enableVibration(true);
+                mChannel.setVibrationPattern(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+                notifManager.createNotificationChannel(mChannel);
+            }
+            builder = new NotificationCompat.Builder(context, id);
+            intent = new Intent(context, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+            builder.setContentTitle(aMessage)                            // required
+                    .setSmallIcon(android.R.drawable.ic_popup_reminder)   // required
+                    .setContentText(contentText) // required
+                    .setDefaults(Notification.DEFAULT_ALL)
+                    .setAutoCancel(true)
+                    .setContentIntent(pendingIntent)
+                    .setTicker(aMessage)
+                    .setVibrate(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400});
+        } else {
+            builder = new NotificationCompat.Builder(context, id);
+            intent = new Intent(context, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+            builder.setContentTitle(aMessage)                            // required
+                    .setSmallIcon(android.R.drawable.ic_popup_reminder)   // required
+                    .setContentText(contentText) // STOP BUS
+                    .setDefaults(Notification.DEFAULT_ALL)
+                    .setAutoCancel(true)
+                    .setContentIntent(pendingIntent)
+                    .setTicker(aMessage)
+                    //.setVibrate(new long[]{100, 200, 300, 400, 500, 400, 300, 200, 400})
+                    .setPriority(Notification.PRIORITY_HIGH);
+        }
+        Notification notification = builder.build();
+        notifManager.notify(NOTIFY_ID, notification);
     }
 }

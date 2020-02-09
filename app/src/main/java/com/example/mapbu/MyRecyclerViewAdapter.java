@@ -57,7 +57,7 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAd
 
         ViewHolder(View itemView) {
             super(itemView);
-            myTextView = itemView.findViewById(R.id.tvAnimalName);
+            myTextView = itemView.findViewById(R.id.Route);
             itemView.setOnClickListener(this);
         }
 
