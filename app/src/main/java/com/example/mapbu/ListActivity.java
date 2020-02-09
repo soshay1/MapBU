@@ -78,7 +78,10 @@ public class ListActivity extends AppCompatActivity implements MyRecyclerViewAda
         routeNames.add("Rivera Ridge");
         routeNames.add("Leroy Southside");
         //routeNames.add("Goat");
+        Intent serviceIntent = new Intent(this, MapService.class);
+        //serviceIntent.putExtra("inputExtra", input);
 
+        ContextCompat.startForegroundService(this, serviceIntent);
         // set up the RecyclerView
         RecyclerView recyclerView = findViewById(R.id.the_routes);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -131,7 +134,7 @@ public class ListActivity extends AppCompatActivity implements MyRecyclerViewAda
     @Override
     public void onPause() {
         super.onPause();
-
+        //startService(new Intent(this,MapService.class));
         //stop location updates when Activity is no longer active or DON'T do this?????????????????? I need to push notifs :( What about battery?
         //if (mGoogleApiClient != null) {
         //    LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
@@ -179,6 +182,7 @@ public class ListActivity extends AppCompatActivity implements MyRecyclerViewAda
         if(smallLat!=0){ //selected stop
             if(latLng.longitude>=smallLong && latLng.longitude<=largeLong &&latLng.latitude>=smallLat && latLng.latitude<=largeLat){
                 createNotification("PULL THE LEVER, KRONK", this, "Your stop, "+stop+", is up next!"); // MUST GET STOP STRING
+                stoploc();
                 //Toast.makeText(this,"BITCHES WE ARE STOPPING",Toast.LENGTH_SHORT).show();
 
             }
@@ -346,6 +350,9 @@ public class ListActivity extends AppCompatActivity implements MyRecyclerViewAda
             i.putExtra("smallLong",smallLong);
             i.putExtra("largeLat",largeLat);
             i.putExtra("largeLong",largeLong);
+            if(stop!=null&&stop!=""){
+                i.putExtra("stop",stop);
+            }
             startActivity(i);
         }
         //if(position==2){

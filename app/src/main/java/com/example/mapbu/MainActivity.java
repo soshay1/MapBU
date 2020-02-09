@@ -421,6 +421,20 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onPause() {
         super.onPause();
+        /*if(smallLat!=0){
+            Intent i = new Intent(this, MapService.class);
+            i.putExtra("smallLat", smallLat);
+            i.putExtra("largeLat", largeLat);
+            i.putExtra("smallLong",smallLong);
+            i.putExtra("largeLong",largeLong);
+            i.putExtra("stop",stop);
+            startService(i);
+        }*/
+        //getLocation();
+// Set some data that the Service might require/use
+        //intent.putExtra("l", "val");
+
+// Start the Service
 
         //stop location updates when Activity is no longer active or DON'T do this?????????????????? I need to push notifs :( What about battery?
         //if (mGoogleApiClient != null) {
@@ -625,6 +639,7 @@ public class MainActivity extends AppCompatActivity
                 if(latLng.longitude>=smallLong && latLng.longitude<=largeLong &&latLng.latitude>=smallLat && latLng.latitude<=largeLat){
                     Toast.makeText(this,"BITCHES WE ARE STOPPING",Toast.LENGTH_SHORT).show();
                     createNotification("PULL THE LEVER, KRONK", this, "Your stop, "+selectedMarker.getTitle()+", is up next!");
+                    stoploc(); //dangerous!?
 
 // notificationId is a unique int for each notification that you must define
                     smallLat=0;
@@ -653,7 +668,7 @@ public class MainActivity extends AppCompatActivity
                 if(latLng.longitude>=smallLong && latLng.longitude<=largeLong &&latLng.latitude>=smallLat && latLng.latitude<=largeLat){
                     Toast.makeText(this,"BITCHES WE ARE STOPPING",Toast.LENGTH_SHORT).show();
                     createNotification("PULL THE LEVER, KRONK", this, "Your stop, "+stop+", is up next!");
-
+                    stoploc();
 // notificationId is a unique int for each notification that you must define
                     smallLat=0;
                     smallLong=0;
